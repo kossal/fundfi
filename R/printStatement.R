@@ -2,10 +2,9 @@
 #'
 #' This function prints a financial statement returned by
 #' getStatement. It can print all dates reported or only those
-#' tha are 50% or more full.
+#' tha are 50\% or more full.
 #' @param statement data.frame returned by getStatement
-#' @param all.Dates Defaults to FALSE, will only print dates that have more
-#' then 50 % of data. TRUE will print them all.
+#' @param all.Dates Defaults to FALSE, will only print dates that have half of data
 #' @return Prints to console or to .md the financial statement
 #' @keywords Print financial statement
 #' @export

@@ -4,7 +4,8 @@
 \alias{getStatement}
 \title{Create finantial reports}
 \usage{
-getStatement(xbrl.vars = NULL, statement = "balance_sheet")
+getStatement(xbrl.vars = NULL, statement = "balance_sheet",
+  custom.roleID = NULL)
 }
 \arguments{
 \item{xbrl.vars}{XBRL list of data.frames}

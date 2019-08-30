@@ -9,8 +9,7 @@ printStatement(statement, all.Dates = FALSE)
 \arguments{
 \item{statement}{data.frame returned by getStatement}
 
-\item{all.Dates}{Defaults to FALSE, will only print dates that have more
-then 50 % of data. TRUE will print them all.}
+\item{all.Dates}{Defaults to FALSE, will only print dates that have half of data}
 }
 \value{
 Prints to console or to .md the financial statement
@@ -18,7 +17,7 @@ Prints to console or to .md the financial statement
 \description{
 This function prints a financial statement returned by
 getStatement. It can print all dates reported or only those
-tha are 50% or more full.
+tha are 50\% or more full.
 }
 \examples{
 printStatement(getStatement(allXBRLs$PG, statement = "income_statement"))
