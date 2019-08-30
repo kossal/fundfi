@@ -1,0 +1,29 @@
+Package: fundfi
+Type: Package
+Title: Fundamental XBRL financial analysis
+Version: 0.1.0
+Author: Christopher Wilson
+Maintainer: Christopher Wilson <christopher@figaredo.net>
+Description: This package acts as a wrapper for the edgarWebR
+    and XBRL packages, making it easy to download any XBRL document
+    from the SEC EDGAR's service. It also formats the balance sheet,
+    income statement and cash flow. Finally it does percentage analysis,
+    finantial indicators, variance and merging statements.
+Depends:
+    R (>= 2.15)
+Imports:
+    edgarWebR,
+    XBRL,
+    tidyr,
+    dplyr,
+    pander,
+    digest
+Suggests:
+    knitr,
+    devtools,
+    roxygen2,
+    testthat
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.1.9000
