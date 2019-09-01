@@ -2,7 +2,7 @@
 % Please edit documentation in R/getStatement.R
 \name{getStatement}
 \alias{getStatement}
-\title{Create finantial reports}
+\title{Create fundamental finantial report}
 \usage{
 getStatement(xbrl.vars = NULL, statement = "balance_sheet",
   custom.roleID = NULL)

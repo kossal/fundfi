@@ -4,20 +4,17 @@
 \alias{printStatement}
 \title{Print financial statement}
 \usage{
-printStatement(statement, all.Dates = FALSE)
+printStatement(statement)
 }
 \arguments{
 \item{statement}{data.frame returned by getStatement}
-
-\item{all.Dates}{Defaults to FALSE, will only print dates that have half of data}
 }
 \value{
 Prints to console or to .md the financial statement
 }
 \description{
 This function prints a financial statement returned by
-getStatement. It can print all dates reported or only those
-tha are 50\% or more full.
+getStatement.
 }
 \examples{
 printStatement(getStatement(allXBRLs$PG, statement = "income_statement"))

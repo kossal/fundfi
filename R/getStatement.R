@@ -1,4 +1,4 @@
-#' Create finantial reports
+#' Create fundamental finantial report
 #'
 #' This function will create finantial reports of a list
 #' of data.frames with the XBRL format.
@@ -62,7 +62,7 @@ getStatement <- function(xbrl.vars = NULL, statement = "balance_sheet", custom.r
     }
   }
   if (length(role_id) == 0) {
-    stop(paste("Role id names could not be found", xbrl.vars$role$description))
+    stop(paste("Role id names could not be found"))
   }
 
   # XBRL includes three hierarchies of concepts: definition, presentation
@@ -127,58 +127,80 @@ getStatement <- function(xbrl.vars = NULL, statement = "balance_sheet", custom.r
       )
     )
 
-  statement_table <- data.frame()
-  statement_hierarchy <- data.frame()
 
-  if (statement == "balance_sheet") {
+  statement_hierarchy <- tryCatch({
 
-    statement_table <- elementsHier %>%
+    temp <- elementsHier %>%
       left_join(xbrl.vars$fact, by = "elementId") %>%
       left_join(xbrl.vars$context, by = "contextId") %>%
       filter(is.na(dimension1)) %>% # dimension1 NA significa que no pertenecen a un subcontexto
       filter(!is.na(endDate)) %>%
       mutate( fact = as.numeric(fact) * 10 ^ as.numeric(decimals) ) %>%
-      dplyr::arrange(id) %>%
       select(id, level, parentId, elementId, labelString, element, value = fact, balance, endDate)
 
-    statement_hierarchy <- statement_table %>%
-      select(-(id)) %>%
+    temp <- temp %>%
       distinct() %>%
-      spread(endDate, value) # Organiza todos los endDate en columnas y como valores pone fact
+      spread(endDate, value) %>% # Organiza todos los endDate en columnas y como valores pone fact
+      arrange(id)
 
-  } else {
+    temp
 
-    # Gather facts from last start date
-    statement_table <- elementsHier %>%
-      left_join(xbrl.vars$fact, by = "elementId") %>%
-      left_join(xbrl.vars$context, by = "contextId") %>%
-      filter(is.na(dimension1)) %>%
-      filter(!is.na(endDate)) %>%
-      mutate( fact = as.numeric(fact) * 10 ^ as.numeric(decimals) ) %>%
-      dplyr::arrange(id) %>%
-      select(id, level, parentId, elementId, labelString, element, value = fact, balance, startDate, endDate) %>%
-      spread(startDate, value)
+    },
+    error=function(cond){
+      return(NULL)
+    }
+  )
 
-    # Get all startDates and filter the lastest ones
-    datesCol <- !is.na(as.Date(names(statement_table), format="%Y-%m-%d"))
-    for (i in (1:nrow(statement_table))) {
-      curr <- statement_table[i, datesCol]
+  # Some XBRL have diferent startDates and causes the code to error
+  # This tryCatch tries to pick up the latest start date of an observation
+  # with the same end date
+  if (is.null(statement_hierarchy)) {
 
-      if (length(curr[!is.na(curr)]) > 1 ) {
-        times <- names(statement_table)[datesCol][!is.na(curr)]
-        maxTime <- max(as.POSIXct(times, format="%Y-%m-%d")) == as.POSIXct(names(statement_table)[datesCol], format="%Y-%m-%d")
-        max <- c(rep(c(FALSE), length(statement_table) - length(names(statement_table)[datesCol])), maxTime)
-        statement_table[i, max] <- NA
+    statement_hierarchy <- tryCatch({
+
+      # Gather facts from last start date
+      statement_table <- elementsHier %>%
+        left_join(xbrl.vars$fact, by = "elementId") %>%
+        left_join(xbrl.vars$context, by = "contextId") %>%
+        filter(is.na(dimension1)) %>%
+        filter(!is.na(endDate)) %>%
+        mutate( fact = as.numeric(fact) * 10 ^ as.numeric(decimals) ) %>%
+        select(id, level, parentId, elementId, labelString, element, value = fact, balance, startDate, endDate) %>%
+        spread(startDate, value)
+
+      # Get all startDates and filter the lastest ones
+      datesCol <- !is.na(as.Date(names(statement_table), format="%Y-%m-%d"))
+      for (i in (1:nrow(statement_table))) {
+        curr <- statement_table[i, datesCol]
+
+        if (length(curr[!is.na(curr)]) > 1 ) {
+          times <- names(statement_table)[datesCol][!is.na(curr)]
+          maxTime <- max(as.POSIXct(times, format="%Y-%m-%d")) == as.POSIXct(names(statement_table)[datesCol], format="%Y-%m-%d")
+          max <- c(rep(c(FALSE), length(statement_table) - length(names(statement_table)[datesCol])), maxTime)
+          statement_table[i, max] <- NA
+        }
+
       }
 
-    }
+      temp <- statement_table %>%
+        gather(names(statement_table)[datesCol], key = "startDate", value = "value", na.rm = TRUE) %>%
+        select(-(startDate)) %>%
+        distinct() %>%
+        spread(endDate, value) %>%
+        arrange(id)
 
-    statement_hierarchy <- statement_table %>%
-      gather(names(statement_table)[datesCol], key = "startDate", value = "value", na.rm = TRUE) %>%
-      select(-(id), -(startDate)) %>%
-      distinct() %>%
-      spread(endDate, value)
+      temp
 
+      },
+      error = function(cond){
+        return(NULL)
+      }
+    )
+
+  }
+
+  if (is.null(statement_hierarchy)) {
+    stop(paste0("Was not able to compile statement hierarchy."))
   }
 
   invisible(statement_hierarchy)
