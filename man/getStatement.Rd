@@ -2,7 +2,7 @@
 % Please edit documentation in R/getStatement.R
 \name{getStatement}
 \alias{getStatement}
-\title{Create fundamental finantial report}
+\title{Create finantial report}
 \usage{
 getStatement(xbrl.vars = NULL, statement = "balance_sheet",
   custom.roleID = NULL)
@@ -11,16 +11,18 @@ getStatement(xbrl.vars = NULL, statement = "balance_sheet",
 \item{xbrl.vars}{XBRL list of data.frames}
 
 \item{statement}{Type of statement. Can be balance_sheet, income_statement and cash_flow}
+
+\item{custom.roleId}{Character to fetch roleId using description}
 }
 \value{
-A data.frame as a financial report
+data.frame as a financial report
 }
 \description{
-This function will create finantial reports of a list
-of data.frames with the XBRL format.
+Creates a data.frame containing a finantial
+report using a XBRL list of data.frame.
 }
 \examples{
-getStatement(getXBRL(c("PG", type="10-Q"))$PG, statement = income_statement)
+getStatement(getXBRL(c("PG", type="10-Q"))$PG, statement = "income_statement")
 }
 \keyword{Finantial}
 \keyword{Statement}

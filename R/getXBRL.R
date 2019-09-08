@@ -1,16 +1,19 @@
 #' Get a list of XBRL
 #'
+#' Fetches XBRLs list of data.frames from the SEC's EDGAR
+#'
 #' This function will fetch the XBRL documents of
 #' the specified tickers. It will return a list of
 #' XBRL list.
 #' @param tickers A ticker character value or vector
+#' @param type Type of filling like 10-Q or 10-K
+#' @param new Defaults to FALSE. If TRUE, ignores rds cache
 #' @return List with ticker names which have lists of data.frames, formated as XBRL
 #' @keywords XBRL
 #' @export
 #' @examples
 #' getXBRL(c("AAPL", "TSLA", "GE"), type = "10-Q")
-#' @import edgarWebR XBRL digest
-getXBRL <- function(tickers = NULL, type = "10-Q", new=FALSE) {
+getXBRL <- function(tickers = NULL, type = "10-Q", new = FALSE) {
 
   if (is.null(tickers)) {
     stop("No tickers were specified")
@@ -19,7 +22,7 @@ getXBRL <- function(tickers = NULL, type = "10-Q", new=FALSE) {
   allXBRLs <- list()
 
   # Check if data is on cache
-  hash.file <- paste0(digest(paste0(tickers), "md5", serialize = FALSE), "-xbrl.rds")
+  hash.file <- paste0(digest::digest(paste0(tickers), "md5", serialize = FALSE), "-xbrl.rds")
   if (!file.exists(hash.file)) {
 
     for (ticker in tickers) {

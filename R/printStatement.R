@@ -8,7 +8,6 @@
 #' @export
 #' @examples
 #' printStatement(getStatement(allXBRLs$PG, statement = "income_statement"))
-#' @import pander
 #' @import dplyr
 printStatement <- function(st) {
 

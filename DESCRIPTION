@@ -10,14 +10,15 @@ Description: This package acts as a wrapper for the edgarWebR
     income statement and cash flow. Finally it does percentage analysis,
     finantial indicators, variance and merging statements.
 Depends:
-    R (>= 2.15)
+    R (>= 3.6.1)
 Imports:
     edgarWebR,
     XBRL,
     tidyr,
     dplyr,
     pander,
-    digest
+    digest,
+    stringr
 Suggests:
     knitr,
     devtools,

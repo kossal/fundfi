@@ -4,10 +4,10 @@
 \alias{printStatement}
 \title{Print financial statement}
 \usage{
-printStatement(statement)
+printStatement(st)
 }
 \arguments{
-\item{statement}{data.frame returned by getStatement}
+\item{st}{data.frame returned by getStatement}
 }
 \value{
 Prints to console or to .md the financial statement

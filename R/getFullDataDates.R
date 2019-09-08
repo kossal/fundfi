@@ -5,7 +5,6 @@
 #' @return data.frame with dates columns that are half full of data
 #' @keywords format dates
 #' @export
-#' @import dplyr
 getFullDataDates <- function(st) {
 
   statement <- st

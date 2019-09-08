@@ -8,11 +8,18 @@ getXBRL(tickers = NULL, type = "10-Q", new = FALSE)
 }
 \arguments{
 \item{tickers}{A ticker character value or vector}
+
+\item{type}{Type of filling like 10-Q or 10-K}
+
+\item{new}{Defaults to FALSE. If TRUE, ignores rds cache}
 }
 \value{
 List with ticker names which have lists of data.frames, formated as XBRL
 }
 \description{
+Fetches XBRLs list of data.frames from the SEC's EDGAR
+}
+\details{
 This function will fetch the XBRL documents of
 the specified tickers. It will return a list of
 XBRL list.

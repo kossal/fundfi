@@ -1,47 +1,37 @@
-#' Create fundamental finantial report
+#' Create finantial report
 #'
-#' This function will create finantial reports of a list
-#' of data.frames with the XBRL format.
+#' Creates a data.frame containing a finantial
+#' report using a XBRL list of data.frame.
 #' @param xbrl.vars XBRL list of data.frames
 #' @param statement Type of statement. Can be balance_sheet, income_statement and cash_flow
-#' @return A data.frame as a financial report
+#' @param custom.roleId Character to fetch roleId using description
+#' @return data.frame as a financial report
 #' @keywords Finantial Statement
 #' @export
 #' @examples
-#' getStatement(getXBRL(c("PG", type="10-Q"))$PG, statement = income_statement)
-#' @import tidyr dplyr
-getStatement <- function(xbrl.vars = NULL, statement = "balance_sheet", custom.roleID=NULL) {
+#' getStatement(getXBRL(c("PG", type="10-Q"))$PG, statement = "income_statement")
+#' @import dplyr
+getStatement <- function(xbrl.vars = NULL, statement = "balance_sheet", custom.roleID = NULL) {
 
   if (is.null(xbrl.vars)) {
     stop("You have to provide a list of data.frames with XBRL format.")
   }
 
+  # Try to get roleId using diferent descriptions based on statement
   role_names <- NULL
+  role_id <- NULL
   if (is.null(custom.roleID)) {
 
     # Get names of statement specified and search for them in roles table
     switch (statement,
             balance_sheet = {
-              role_names <- c(
-                "CONSOLIDATED BALANCE SHEETS",
-                "CONDENSED CONSOLIDATED BALANCE SHEETS (Unaudited)",
-                "Consolidated Balance Sheets (Unaudited)"
-              )
+              role_names <- stringr::regex("^(condensed|consolidated|condensed consolidated) balance sheets?", ignore_case = TRUE)
             },
             income_statement = {
-              role_names <- c(
-                "CONSOLIDATED STATEMENTS OF EARNINGS",
-                "Consolidated Statements of Comprehensive Loss (Unaudited)",
-                "Consolidated Statements of Comprehensive Income (Unaudited)",
-                "CONDENSED CONSOLIDATED STATEMENTS OF COMPREHENSIVE INCOME (Unaudited)"
-              )
+              role_names <- stringr::regex("^(statements?|condensed statements?|consolidated statements?|condensed consolidated statements?) of (operations|income|earnings)", ignore_case = TRUE)
             },
             cash_flow = {
-              role_names <- c(
-                "CONSOLIDATED STATEMENTS OF CASH FLOWS",
-                "Consolidated Statements of Cash Flows (Unaudited)",
-                "CONDENSED CONSOLIDATED STATEMENTS OF CASH FLOWS (Unaudited)"
-              )
+              role_names <- stringr::regex("^(statements?|condensed statements?|consolidated statements?|condensed consolidated statements?) of cash flows?", ignore_case = TRUE)
             }
     )
 
@@ -50,159 +40,131 @@ getStatement <- function(xbrl.vars = NULL, statement = "balance_sheet", custom.r
     }
 
   } else {
-    role_names <- c(custom.roleID)
+    role_id <- xbrl.vars$role[xbrl.vars$role$description == custom.roleID, "roleId"]
+
+    if (nchar(role_id) == 0) {
+      stop(paste("Role id names could not be found using custom.roleID", custom.roleID))
+    }
   }
 
-  role_id <- NULL
-  for (name in role_names) {
-    role_id <- xbrl.vars$role[xbrl.vars$role$description == name,]$roleId
+  if (is.null(role_id)) {
 
-    if (length(role_id) > 0) {
+    matchingDesc <- stringr::str_subset(xbrl.vars$role$description, role_names)
+    noParenthetical <- !stringr::str_detect(matchingDesc, stringr::regex("parenthetical", ignore_case = TRUE))
+    description <- matchingDesc[noParenthetical][1]
+
+    # Income statements has many names. Should use better code
+    if (statement == "income_statement" & is.na(description)) {
+
+      role_names <- stringr::regex("^(condensed|consolidated|condensed consolidated) (operations?|earnings?|income) statements?", ignore_case = TRUE)
+      matchingDesc <- stringr::str_subset(xbrl.vars$role$description, role_names)
+      noParenthetical <- !stringr::str_detect(matchingDesc, stringr::regex("parenthetical", ignore_case = TRUE))
+      description <- matchingDesc[noParenthetical][1]
+
+    }
+
+    role_id <- xbrl.vars$role[xbrl.vars$role$description == description, "roleId"][1]
+
+    if (is.na(role_id)) {
+      stop(paste("Role id names could not be found"))
+    }
+
+  }
+
+  calc <- xbrl.vars$calculation[xbrl.vars$calculation$roleId == role_id,] %>%
+    mutate(order = as.numeric(order))
+
+  if (nrow(calc) == 0) {
+    stop(paste0("No data was found using: ", custom.roleID))
+  }
+
+  # Get first level
+  hier <- calc %>%
+    anti_join(calc, by=c("fromElementId" = "toElementId")) %>%
+    select(elementId = fromElementId) %>%
+    distinct()
+
+  # Arrange assest as first element
+  if (statement == "balance_sheet") {
+    hier <- arrange(hier, elementId)
+  }
+
+  # Create id and level columns
+  l <- 1
+  hier <- hier %>%
+    transmute(id = sprintf("%02d", 1:nrow(hier)), level = l, elementId)
+
+  # Create id and levels columns for all childs
+  repeat {
+
+    # Get childs of last level
+    tempHier <- hier %>%
+      filter(level == l) %>%
+      inner_join(calc, by=c("elementId" = "fromElementId"))
+
+    # If no child exists, stop loop
+    if (nrow(tempHier) == 0) {
       break
     }
-  }
-  if (length(role_id) == 0) {
-    stop(paste("Role id names could not be found"))
-  }
 
-  # XBRL includes three hierarchies of concepts: definition, presentation
-  # and calculation. Hierarchies are stored as links in definition, presentation
-  # and calculation tables. Columns fromElementId and toElementId represent
-  # parent and child.
-  relations <-
-    xbrl.vars$calculation %>%
-    filter(roleId == role_id) %>%
-    select(fromElementId, toElementId, order)
+    # Create id and level columns for childs andd append it to hier
+    l <- l + 1
+    tempHier <- tempHier %>%
+      select(id, parentId = elementId, elementId = toElementId, order) %>%
+      group_by(parentId) %>%
+      arrange(order, .by_group = TRUE) %>%
+      ungroup() %>%
+      select(-(parentId)) %>%
+      transmute(id = sprintf("%s%02d", id, order), level = l, elementId)
 
-  elements <-
-    data.frame(
-      elementId = with(relations, unique(c(fromElementId, toElementId))),
-      stringsAsFactors = FALSE
-    ) %>%
-    left_join(xbrl.vars$element, by = c("elementId")) %>%
-    left_join(relations, by = c("elementId" = "toElementId")) %>%
-    left_join(xbrl.vars$label, by = c("elementId")) %>%
-    filter(labelRole == "http://www.xbrl.org/2003/role/label") %>%
-    transmute(elementId, parentId = fromElementId, order, balance, labelString)
-
-  level <- 1
-  df1 <- elements %>%
-    filter(is.na(parentId)) %>%
-    mutate(id = "") %>%
-    arrange(desc(balance))
-
-  # search the tree
-  while({
-    level_str <-
-      unname(unlist(lapply(split(df1$id, df1$id), function(x) {
-        sprintf("%s%02d", x, 1:length(x))
-      })))
-
-    elements[elements$elementId %in% df1$elementId, "level"] <- level
-    to_update <- elements[elements$elementId %in% df1$elementId, "elementId"]
-    elements[
-      #order(match(elements$elementId, to_update))[1:length(level_str)],
-      order(match(elements$elementId, df1$elementId))[1:length(level_str)],
-      "id"] <- level_str
-
-    df1 <- elements %>%
-      filter(parentId %in% df1$elementId) %>%
-      arrange(order) %>%
-      select(elementId, parentId) %>%
-      left_join(elements, by=c("parentId"="elementId")) %>%
-      arrange(id)
-    nrow(df1) > 0})
-  {
-    level <- level + 1
-  }
-
-  # Create hierarchy on labelString
-  elementsHier <-
-    elements %>%
-    dplyr::mutate(
-      terminal = !elementId %in% parentId,
-      element = paste(
-        substring( paste(rep("&nbsp;", 10), collapse = ""), 1, (level-1)*2*6),
-        labelString
-      )
-    )
-
-
-  statement_hierarchy <- tryCatch({
-
-    temp <- elementsHier %>%
-      left_join(xbrl.vars$fact, by = "elementId") %>%
-      left_join(xbrl.vars$context, by = "contextId") %>%
-      filter(is.na(dimension1)) %>% # dimension1 NA significa que no pertenecen a un subcontexto
-      filter(!is.na(endDate)) %>%
-      mutate( fact = as.numeric(fact) * 10 ^ as.numeric(decimals) ) %>%
-      select(id, level, parentId, elementId, labelString, element, value = fact, balance, endDate)
-
-    temp <- temp %>%
-      distinct() %>%
-      spread(endDate, value) %>% # Organiza todos los endDate en columnas y como valores pone fact
-      arrange(id)
-
-    temp
-
-    },
-    error=function(cond){
-      return(NULL)
-    }
-  )
-
-  # Some XBRL have diferent startDates and causes the code to error
-  # This tryCatch tries to pick up the latest start date of an observation
-  # with the same end date
-  if (is.null(statement_hierarchy)) {
-
-    statement_hierarchy <- tryCatch({
-
-      # Gather facts from last start date
-      statement_table <- elementsHier %>%
-        left_join(xbrl.vars$fact, by = "elementId") %>%
-        left_join(xbrl.vars$context, by = "contextId") %>%
-        filter(is.na(dimension1)) %>%
-        filter(!is.na(endDate)) %>%
-        mutate( fact = as.numeric(fact) * 10 ^ as.numeric(decimals) ) %>%
-        select(id, level, parentId, elementId, labelString, element, value = fact, balance, startDate, endDate) %>%
-        spread(startDate, value)
-
-      # Get all startDates and filter the lastest ones
-      datesCol <- !is.na(as.Date(names(statement_table), format="%Y-%m-%d"))
-      for (i in (1:nrow(statement_table))) {
-        curr <- statement_table[i, datesCol]
-
-        if (length(curr[!is.na(curr)]) > 1 ) {
-          times <- names(statement_table)[datesCol][!is.na(curr)]
-          maxTime <- max(as.POSIXct(times, format="%Y-%m-%d")) == as.POSIXct(names(statement_table)[datesCol], format="%Y-%m-%d")
-          max <- c(rep(c(FALSE), length(statement_table) - length(names(statement_table)[datesCol])), maxTime)
-          statement_table[i, max] <- NA
-        }
-
-      }
-
-      temp <- statement_table %>%
-        gather(names(statement_table)[datesCol], key = "startDate", value = "value", na.rm = TRUE) %>%
-        select(-(startDate)) %>%
-        distinct() %>%
-        spread(endDate, value) %>%
-        arrange(id)
-
-      temp
-
-      },
-      error = function(cond){
-        return(NULL)
-      }
-    )
+    hier <- rbind(hier, tempHier)
 
   }
 
-  if (is.null(statement_hierarchy)) {
-    stop(paste0("Was not able to compile statement hierarchy."))
+  rm(l, tempHier)
+
+  res <- arrange(hier, id)
+
+  # Join hier to calculation to get parentId
+  # Join with element to get balance
+  # Join with fact to get values, unitId, decimals and contextId
+  # Join with context to get dates
+  # Join with labels to get labelString
+  # Create concept as label string plus leading spaces by level
+  elements <- hier %>%
+    left_join(calc, by=c("elementId" = "toElementId")) %>%
+    select(id, level, parentId = fromElementId, elementId)
+
+  elementsWLabels <- elements %>%
+    left_join(xbrl.vars$element, by="elementId") %>%
+    left_join(xbrl.vars$fact, by="elementId") %>%
+    left_join(xbrl.vars$context, by="contextId") %>%
+    left_join(xbrl.vars$label, by="elementId") %>%
+    filter(is.na(dimension1), lang == "en-US", labelRole == "http://www.xbrl.org/2003/role/label") %>%
+    mutate(fact = as.numeric(fact) * 10 ^ as.numeric(decimals)) %>%
+    mutate(concept = sprintf("%s%s", strrep("   ", level - 1), labelString)) %>%
+    select(id, level, parentId, elementId, balance, unitId, decimals, labelString, concept, fact, startDate, endDate)
+
+  # Income statements and cash flows have diferent start dates
+  # for each endDate
+  temp <- data.frame()
+  if (statement != "balance_sheet") {
+
+    temp <- elementsWLabels %>%
+      group_by(elementId, endDate) %>%
+      filter(startDate == min(as.Date(startDate))) %>%
+      ungroup() %>%
+      ungroup()
+
+  } else {
+    temp <- elementsWLabels
   }
 
-  invisible(statement_hierarchy)
+  elementsPretty <- temp %>%
+    select(-(startDate)) %>%
+    distinct() %>%
+    tidyr::spread(key = endDate, value = fact)
+
+  invisible(elementsPretty)
 
 }
