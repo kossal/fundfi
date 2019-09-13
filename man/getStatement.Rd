@@ -5,21 +5,37 @@
 \title{Create finantial report}
 \usage{
 getStatement(xbrl.vars = NULL, statement = "balance_sheet",
-  custom.roleID = NULL)
+  custom.description = NULL)
 }
 \arguments{
 \item{xbrl.vars}{XBRL list of data.frames}
 
 \item{statement}{Type of statement. Can be balance_sheet, income_statement and cash_flow}
 
-\item{custom.roleId}{Character to fetch roleId using description}
+\item{custom.description}{Character to fetch roleId using description from roles data.frame}
 }
 \value{
 data.frame as a financial report
 }
 \description{
+Create specified finantial report from XBRL list.
+}
+\details{
 Creates a data.frame containing a finantial
-report using a XBRL list of data.frame.
+report using a XBRL list returned by XBRL
+library. It uses the calculation data.frame
+to unite elements with facts, contexts and labels.
+Income statements and cash flows sometimes have
+diferent start dates for a element with
+the same end date, in this case it will use
+the last start date. Each company uses diferent
+descriptions for the same roles (balance sheet,
+income statement and cash flow). This library
+tries it best using regex to get every posible
+description but of course there will be exceptions
+or the user might want to use a diferent concept.
+For this case, you can use the parameter custom.description
+to use your own description.
 }
 \examples{
 getStatement(getXBRL(c("PG", type="10-Q"))$PG, statement = "income_statement")

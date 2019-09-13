@@ -6,9 +6,10 @@ Author: Christopher Wilson
 Maintainer: Christopher Wilson <christopher@figaredo.net>
 Description: This package acts as a wrapper for the edgarWebR
     and XBRL packages, making it easy to download any XBRL document
-    from the SEC EDGAR's service. It also formats the balance sheet,
-    income statement and cash flow. Finally it does percentage analysis,
-    finantial indicators, variance and merging statements.
+    from the SEC EDGAR's service using tickers. It also formats 
+    the balance sheet, income statement and cash flow. Finally 
+    it does percentage analysis, finantial indicators, 
+    variance and merging statements.
 Depends:
     R (>= 3.6.1)
 Imports:
@@ -16,14 +17,13 @@ Imports:
     XBRL,
     tidyr,
     dplyr,
-    pander,
-    digest,
     stringr
 Suggests:
     knitr,
     devtools,
     roxygen2,
-    testthat
+    testthat,
+    pander
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

@@ -2,27 +2,41 @@
 % Please edit documentation in R/getXBRL.R
 \name{getXBRL}
 \alias{getXBRL}
-\title{Get a list of XBRL}
+\title{Fetch a list of XBRLs}
 \usage{
-getXBRL(tickers = NULL, type = "10-Q", new = FALSE)
+getXBRL(tickers = NULL, type = "10-Q", new = FALSE,
+  xbrl.cache = "xbrl.Cache", xbrl.rds.cache = "xbrl.rds.Cache")
 }
 \arguments{
 \item{tickers}{A ticker character value or vector}
 
 \item{type}{Type of filling like 10-Q or 10-K}
 
-\item{new}{Defaults to FALSE. If TRUE, ignores rds cache}
+\item{new}{Defaults to FALSE. If TRUE, ignores rds cache.}
+
+\item{xbrl.cache}{Folder where XBRL taxonomies are saved.
+If null then it wont save cache.}
+
+\item{xbrl.rds.cache}{Folder where XBRL lists are saved as .rds
+If null, it wont save cache.}
 }
 \value{
 List with ticker names which have lists of data.frames, formated as XBRL
 }
 \description{
-Fetches XBRLs list of data.frames from the SEC's EDGAR
+Fetches the XBRLs of the tickers specified from the SEC's EDGAR.
 }
 \details{
 This function will fetch the XBRL documents of
 the specified tickers. It will return a list of
-XBRL list.
+XBRL list. Each XBRL list contains the data.frames
+returned by the library XBRL. Each ticker XBRL from
+a data are cached as a .rds in the folder xbrl.rds.Cache.
+All XBRL taxonomies are cached in the folder xbrl.Cache.
+These behaviors can be modified using parameters.
+If any ticker do not exist, it will be dropped. It
+is reccomended to check if the length of the tickers
+is equal to the returned list.
 }
 \examples{
 getXBRL(c("AAPL", "TSLA", "GE"), type = "10-Q")
