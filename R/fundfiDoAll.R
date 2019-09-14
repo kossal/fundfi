@@ -31,44 +31,44 @@
 #' @export
 #' @examples
 #' getXBRL(c("AAPL", "TSLA", "GE"), type = "10-Q")
-fundfiDoAll <- function(tickers,
-                        type = "10-Q",
-                        force.new = FALSE,
-                        xbrl.cache = "xbrl.Cache",
-                        xbrl.rds.cache = "xbrl.rds.Cache",
-                        drop.empty.dates = FALSE,
-                        statements.dir = FALSE) {
-
-  allXBRLs <- getXBRL(tickers)
-
-  # Test all tickers statements
-  statNames <- c("balance_sheet", "income_statement", "cash_flow")
-  statements <- list()
-  for (ticker in tickers) {
-
-    tickerStatements <- list()
-
-    for (statName in statNames) {
-      tickerStatements[[statName]] <- tryCatch({
-        getStatement(allXBRLs[[ticker]], statement = statName)
-      },
-      error=function(cond){return(NA)})
-    }
-
-    statements[[ticker]] <- tickerStatements
-
-  }
-
-  # Drop empty date cols
-  for (statement in names(statements)) {
-    for (statName in statNames) {
-      statements[[statement]][[statName]] <- dropEmptyDates(statements[[statement]][[statName]])
-    }
-  }
-
-  # Save all statements
-  for (statement in names(statements)) {
-    saveRDS(data, file = paste0("statements/", statement, "-statement.rds"))
-  }
-
-}
+# fundfiDoAll <- function(tickers,
+#                         type = "10-Q",
+#                         force.new = FALSE,
+#                         xbrl.cache = "xbrl.Cache",
+#                         xbrl.rds.cache = "xbrl.rds.Cache",
+#                         drop.empty.dates = FALSE,
+#                         statements.dir = FALSE) {
+#
+#   allXBRLs <- getXBRL(tickers)
+#
+#   # Test all tickers statements
+#   statNames <- c("balance_sheet", "income_statement", "cash_flow")
+#   statements <- list()
+#   for (ticker in tickers) {
+#
+#     tickerStatements <- list()
+#
+#     for (statName in statNames) {
+#       tickerStatements[[statName]] <- tryCatch({
+#         getStatement(allXBRLs[[ticker]], statement = statName)
+#       },
+#       error=function(cond){return(NA)})
+#     }
+#
+#     statements[[ticker]] <- tickerStatements
+#
+#   }
+#
+#   # Drop empty date cols
+#   for (statement in names(statements)) {
+#     for (statName in statNames) {
+#       statements[[statement]][[statName]] <- dropEmptyDates(statements[[statement]][[statName]])
+#     }
+#   }
+#
+#   # Save all statements
+#   for (statement in names(statements)) {
+#     saveRDS(data, file = paste0("statements/", statement, "-statement.rds"))
+#   }
+#
+# }

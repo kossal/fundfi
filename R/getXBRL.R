@@ -70,7 +70,7 @@ getXBRL <- function(tickers = NULL,
 
         if (file.exists(ticker.file.name)) {
           tickerXBRL <- readRDS(ticker.file.name)
-          print(paste("Using", ticker.file.name, "cache for ticker:", ticker))
+          cat(paste0("\nUsing ", ticker.file.name, " cache for ticker: ", ticker, "\n"))
         }
 
       }
@@ -129,10 +129,10 @@ getXBRL <- function(tickers = NULL,
   options(old_o)
 
   # Inform succesfull tickers and drop unsuccesfull
-  print("Succesfull downloads:")
+  cat("\nSuccesfull downloads:\n")
   print(names(allXBRLs[!is.na(allXBRLs)]))
 
-  print("Unsuccesfull downloads:")
+  cat("\n\nUnsuccesfull downloads:\n")
   print(names(allXBRLs[is.na(allXBRLs)]))
 
   allXBRLs <- allXBRLs[!is.na(allXBRLs)]
