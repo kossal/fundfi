@@ -181,7 +181,7 @@ getStatement <- function(xbrl.vars = NULL, statement = "balance_sheet", custom.d
     left_join(xbrl.vars$label, by="elementId") %>%
     filter(is.na(dimension1), lang == "en-US", labelRole == "http://www.xbrl.org/2003/role/label") %>%
     mutate(fact = as.numeric(fact) * 10 ^ as.numeric(decimals)) %>%
-    mutate(concept = sprintf("%s%s", strrep("   ", level - 1), labelString)) %>%
+    mutate(concept = sprintf("%s%s", strrep(strrep("&nbsp;", 4), level - 1), labelString)) %>%
     select(id, level, parentId, elementId, balance, unitId, decimals, labelString, concept, fact, startDate, endDate)
 
   # Income statements and cash flows have diferent start dates

@@ -4,15 +4,15 @@
 \alias{getXBRL}
 \title{Fetch a list of XBRLs}
 \usage{
-getXBRL(tickers = NULL, type = "10-Q", new = FALSE,
+getXBRL(tickers = NULL, type = "10-Q", force.new = FALSE,
   xbrl.cache = "xbrl.Cache", xbrl.rds.cache = "xbrl.rds.Cache")
 }
 \arguments{
 \item{tickers}{A ticker character value or vector}
 
-\item{type}{Type of filling like 10-Q or 10-K}
+\item{type}{Defaults to 10-Q. Type of filling like 10-Q or 10-K}
 
-\item{new}{Defaults to FALSE. If TRUE, ignores rds cache.}
+\item{force.new}{Defaults to FALSE. If TRUE, ignores rds cache.}
 
 \item{xbrl.cache}{Folder where XBRL taxonomies are saved.
 If null then it wont save cache.}
