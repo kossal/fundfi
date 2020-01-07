@@ -18,8 +18,10 @@
 #' For this case, you can use the parameter custom.description
 #' to use your own description.
 #' @param xbrl.vars XBRL list of data.frames
-#' @param statement Type of statement. Can be balance_sheet, income_statement and cash_flow
-#' @param custom.description Character to fetch roleId using description from roles data.frame
+#' @param statement Type of statement. Can be balance_sheet, income_statement
+#' and cash_flow
+#' @param custom.description Character to fetch roleId using description from
+#' roles data.frame
 #' @return data.frame as a financial report
 #' @keywords Finantial Statement
 #' @export

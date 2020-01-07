@@ -4,8 +4,9 @@
 \alias{getXBRL}
 \title{Fetch a list of XBRLs}
 \usage{
-getXBRL(tickers = NULL, type = "10-Q", force.new = FALSE,
-  xbrl.cache = "xbrl.Cache", xbrl.rds.cache = "xbrl.rds.Cache")
+getXBRL(tickers = NULL, type = "10-Q", count = 1, from = NULL,
+  to = NULL, force.new = FALSE, xbrl.cache = "xbrl.Cache",
+  xbrl.rds.cache = "xbrl.rds.Cache")
 }
 \arguments{
 \item{tickers}{A ticker character value or vector}
@@ -21,7 +22,8 @@ If null then it wont save cache.}
 If null, it wont save cache.}
 }
 \value{
-List with ticker names which have lists of data.frames, formated as XBRL
+List with ticker names which have lists of data.frames, formated
+as XBRL
 }
 \description{
 Fetches the XBRLs of the tickers specified from the SEC's EDGAR.

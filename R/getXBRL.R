@@ -9,23 +9,32 @@
 #' a data are cached as a .rds in the folder xbrl.rds.Cache.
 #' All XBRL taxonomies are cached in the folder xbrl.Cache.
 #' These behaviors can be modified using parameters.
-#' If any ticker do not exist, it will be dropped. It
-#' is reccomended to check if the length of the tickers
-#' is equal to the returned list.
+#' If any ticker doesn´t exist, it will be dropped. It´s
+#' recomended to check if the length of the tickers
+#' is equal to the returned list. All dates used for the parameters
+#' are parsed with lubridate ymd function, valid dates are yyyymmdd,
+#' yyyy-mm-dd or yyyy/mm/dd for example.
 #' @param tickers A ticker character value or vector
 #' @param type Defaults to 10-Q. Type of filling like 10-Q or 10-K
+#' @param count Number of maximum filings starting from latest.
+#' @param from Date from which to start to fetch filings.
+#' @param until Date until which al filings end.
 #' @param force.new Defaults to FALSE. If TRUE, ignores rds cache.
 #' @param xbrl.cache Folder where XBRL taxonomies are saved.
 #' If null then it wont save cache.
 #' @param xbrl.rds.cache Folder where XBRL lists are saved as .rds
 #' If null, it wont save cache.
-#' @return List with ticker names which have lists of data.frames, formated as XBRL
+#' @return List with ticker names which have lists of data.frames, formated
+#' as XBRL
 #' @keywords XBRL
 #' @export
 #' @examples
 #' getXBRL(c("AAPL", "TSLA", "GE"), type = "10-Q")
 getXBRL <- function(tickers = NULL,
                     type = "10-Q",
+                    count = 1,
+                    from = NULL,
+                    until = NULL,
                     force.new = FALSE,
                     xbrl.cache = "xbrl.Cache",
                     xbrl.rds.cache = "xbrl.rds.Cache") {
@@ -99,8 +108,7 @@ getXBRL <- function(tickers = NULL,
         }
 
         # Fetch XBRL
-
-        tickerXBRL <- XBRL::xbrlDoAll(xbrlHref, verbose = TRUE, cache.dir = xbrl.cache)
+        tickerXBRL <- fundfi::xbrlDoAllFun(xbrlHref, verbose = TRUE, cache.dir = xbrl.cache)
 
         # Save to cache
         if (!is.null(xbrl.rds.cache)) {
@@ -144,12 +152,3 @@ getXBRL <- function(tickers = NULL,
 #   Install Package:           'Ctrl + Shift + B'
 #   Check Package:             'Ctrl + Shift + E'
 #   Test Package:              'Ctrl + Shift + T'
-
-
-
-
-
-
-
-
-

@@ -3,4 +3,5 @@
 export(dropEmptyDates)
 export(getStatement)
 export(getXBRL)
+export(xbrlDoAllFun)
 import(dplyr)

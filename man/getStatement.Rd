@@ -10,9 +10,11 @@ getStatement(xbrl.vars = NULL, statement = "balance_sheet",
 \arguments{
 \item{xbrl.vars}{XBRL list of data.frames}
 
-\item{statement}{Type of statement. Can be balance_sheet, income_statement and cash_flow}
+\item{statement}{Type of statement. Can be balance_sheet, income_statement
+and cash_flow}
 
-\item{custom.description}{Character to fetch roleId using description from roles data.frame}
+\item{custom.description}{Character to fetch roleId using description from
+roles data.frame}
 }
 \value{
 data.frame as a financial report
