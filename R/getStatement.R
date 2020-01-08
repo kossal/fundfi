@@ -70,9 +70,9 @@ getStatement <- function(xbrl.vars = NULL, statement = "balance_sheet", custom.d
 
   } else {
     # Use custom.description to get roleId
-    role_id <- xbrl.vars$role[xbrl.vars$role$description == custom.description, "roleId"]
+      role_id <- xbrl.vars$role[xbrl.vars$role$description == custom.description, "roleId"]
 
-    if (nchar(role_id) == 0) {
+    if (is.null(role_id)) {
       stop(paste("Role id names could not be found using custom.description", custom.description))
     }
   }

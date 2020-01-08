@@ -11,15 +11,14 @@
 #' These behaviors can be modified using parameters.
 #' If any ticker doesn´t exist, it will be dropped. It´s
 #' recomended to check if the length of the tickers
-#' is equal to the returned list. All dates used for the parameters
-#' are parsed with lubridate ymd function, valid dates are yyyymmdd,
-#' yyyy-mm-dd or yyyy/mm/dd for example.
+#' is equal to the returned list.
 #' @param tickers A ticker character value or vector
 #' @param type Defaults to 10-Q. Type of filling like 10-Q or 10-K
-#' @param count Number of maximum filings starting from latest.
-#' @param from Date from which to start to fetch filings.
-#' @param until Date until which al filings end.
-#' @param force.new Defaults to FALSE. If TRUE, ignores rds cache.
+#' @param count Number of maximum filings. If until parameter is set, the
+#' number of filings returned could be less.
+#' @param until yyyymmdd fillings are downloaded starting from the until
+#' parameter until the oldest, or until it reaches the count limit.
+#' @param force.new Defaults to FALSE. If TRUE.
 #' @param xbrl.cache Folder where XBRL taxonomies are saved.
 #' If null then it wont save cache.
 #' @param xbrl.rds.cache Folder where XBRL lists are saved as .rds
@@ -33,7 +32,6 @@
 getXBRL <- function(tickers = NULL,
                     type = "10-Q",
                     count = 1,
-                    from = NULL,
                     until = NULL,
                     force.new = FALSE,
                     xbrl.cache = "xbrl.Cache",
@@ -42,6 +40,9 @@ getXBRL <- function(tickers = NULL,
   if (is.null(tickers)) {
     stop("No tickers were specified")
   }
+
+  # TODO
+  # Implement until date checkup
 
   allXBRLs <- list()
 
@@ -54,96 +55,145 @@ getXBRL <- function(tickers = NULL,
 
     allXBRLs[[ticker]] <- tryCatch({
 
-      tickerXBRL <- list()
+      print("Starting:", ticker)
 
-      # Returns last fillings, type functions as start with
-      fillings <- edgarWebR::company_filings(ticker, type = type, count = 10)
+      # Type functions as "start with"
+      fillings <- edgarWebR::company_filings(ticker, type = type, count = count, before = until)
+
+      # Filter by type. If not, 10-KA would also work even if 10-K was specified
+      fillings <-  fillings[fillings$type == type,]
+
+      # Limit number of fillings using count
+      if (nrow(fillings) > count) {
+        fillings <- fillings[1:count,]
+      }
 
       if (nrow(fillings) == 0) {
         stop(paste("Could not find any filing information for", ticker, "using type", type))
       }
 
-      # Filter by type. If not, 10-KA would also work even if 10-K was specified
-      fillings <- fillings[fillings$type == type,]
+      companyXBRL <- list()
 
-      # Check cache if force.new is FALSE
-      if (!force.new) {
+      for (filling in 1:nrow(fillings)) {
 
-        ticker.file.name <- file.path(xbrl.rds.cache,
-                                      paste0(
-                                        ticker, "-",
-                                        type, "-",
-                                        fillings$filing_date[[1]], ".rds"
+        companyXBRL[[paste0(
+          ticker, "-",
+          type, "-",
+          fillings$filing_date[[filling]]
+        )]] <- tryCatch({
+
+          tickerXBRL <- list()
+
+          # Create cache file name
+          ticker.file.name <- file.path(xbrl.rds.cache,
+                                        paste0(
+                                          ticker, "-",
+                                          type, "-",
+                                          fillings$filing_date[[filling]], ".rds"
                                         )
-                                      )
+          )
 
-        if (file.exists(ticker.file.name)) {
-          tickerXBRL <- readRDS(ticker.file.name)
-          cat(paste0("\nUsing ", ticker.file.name, " cache for ticker: ", ticker, "\n"))
-        }
+          # Check cache if force.new is FALSE
+          if (!force.new && file.exists(ticker.file.name)) {
+
+            tickerXBRL <- readRDS(ticker.file.name)
+            cat(paste0("\nUsing ", ticker.file.name, " cache for ticker: ", ticker, "\n"))
+
+          }
+
+          # If file was not found on cache then download it
+          if (length(tickerXBRL) == 0) {
+
+            # Get last href filling
+            fillHref <- fillings$href[[filling]]
+
+            # Get all documents of that filling
+            documents <- edgarWebR::filing_documents(fillHref)
+
+            # XBRL instances have diferent names depending on the company
+            # Loop through common names and try to find href to the document
+            xbrlInstanceNames <- c("XBRL INSTANCE DOCUMENT", "EXTRACTED XBRL INSTANCE DOCUMENT")
+            for (name in xbrlInstanceNames) {
+              xbrlHref <- documents[documents$description == name,]$href
+
+              if (length(xbrlHref) > 0) {
+                break
+              }
+            }
+            if (length(xbrlHref) == 0) {
+              stop(paste("XBRL instance filename of", ticker, "not found.", documents$description))
+            }
+
+            # Fetch XBRL
+            tickerXBRL <- fundfi::xbrlDoAllFun(xbrlHref, verbose = TRUE, cache.dir = xbrl.cache)
+
+            # Save to cache
+            if (!is.null(xbrl.rds.cache)) {
+
+              # Create rds cache directory if not exits
+              if (!dir.exists(xbrl.rds.cache)) {
+                dir.create(xbrl.rds.cache)
+              }
+
+              saveRDS(tickerXBRL, file = ticker.file.name)
+
+            }
+
+
+          }
+
+          tickerXBRL
+
+        },
+          error=function(cond){
+            print(cond)
+            return(NA)
+        })
 
       }
 
-      # If file was not found on cache then download it
-      if (length(tickerXBRL) == 0) {
-
-        # Get last href filling
-        fillHref <- fillings$href[[1]]
-
-        # Get all documents of that filling
-        documents <- edgarWebR::filing_documents(fillHref)
-
-        # XBRL instances have diferent names depending on the company
-        # Loop through common names and try to find href to the document
-        xbrlInstanceNames <- c("XBRL INSTANCE DOCUMENT", "EXTRACTED XBRL INSTANCE DOCUMENT")
-        for (name in xbrlInstanceNames) {
-          xbrlHref <- documents[documents$description == name,]$href
-
-          if (length(xbrlHref) > 0) {
-            break
-          }
-        }
-        if (length(xbrlHref) == 0) {
-          stop(paste("XBRL instance filename of", ticker, "not found.", documents$description))
-        }
-
-        # Fetch XBRL
-        tickerXBRL <- fundfi::xbrlDoAllFun(xbrlHref, verbose = TRUE, cache.dir = xbrl.cache)
-
-        # Save to cache
-        if (!is.null(xbrl.rds.cache)) {
-
-          # Create rds cache directory if not exits
-          if (!dir.exists(xbrl.rds.cache)) {
-            dir.create(xbrl.rds.cache)
-          }
-
-          saveRDS(tickerXBRL, file = ticker.file.name)
-
-        }
-
-      }
-
-      tickerXBRL
+      companyXBRL
 
     },
-    error=function(cond){
-      print(cond)
-      return(NA)
-    })
+      error=function(cond){
+        print(cond)
+        return(NA)
+      })
 
   }
 
   options(old_o)
 
+  # TODO
+  # Implement success and failure messages
   # Inform succesfull tickers and drop unsuccesfull
-  cat("\nSuccesfull downloads:\n")
-  print(names(allXBRLs[!is.na(allXBRLs)]))
+  # cat("\nSuccesfull downloads:\n")
+  # print(names(allXBRLs[!is.na(allXBRLs)]))
+  #
+  # cat("\n\nUnsuccesfull downloads:\n")
+  # print(names(allXBRLs[is.na(allXBRLs)]))
 
-  cat("\n\nUnsuccesfull downloads:\n")
-  print(names(allXBRLs[is.na(allXBRLs)]))
+  # Complete failures
+  if (length(allXBRLs[is.na(allXBRLs)]) != 0) {
 
-  allXBRLs <- allXBRLs[!is.na(allXBRLs)]
+    cat("\n\nUnsuccesfull downloads:\n")
+    print(names(allXBRLs[is.na(allXBRLs)]))
+
+    allXBRLs <- allXBRLs[!is.na(allXBRLs)]
+
+  }
+
+  # Single XBRL failure
+  for (t in seq_along(allXBRLs[!is.na(allXBRLs)])) {
+
+    if (length(allXBRLs[[t]][is.na(allXBRLs[[t]])]) != 0) {
+      cat(paste0("\n\n",ticker, " failures:\n"))
+      print(names(allXBRLs[[t]][is.na(allXBRLs[[t]])]))
+    }
+
+    allXBRLs[[t]] <- allXBRLs[[t]][!is.na(allXBRLs[[t]])]
+
+  }
 
   invisible(allXBRLs)
 
