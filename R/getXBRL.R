@@ -55,7 +55,7 @@ getXBRL <- function(tickers = NULL,
 
     allXBRLs[[ticker]] <- tryCatch({
 
-      print("Starting:", ticker)
+      print(paste("Starting:", ticker))
 
       # Type functions as "start with"
       fillings <- edgarWebR::company_filings(ticker, type = type, count = count, before = until)
@@ -165,13 +165,7 @@ getXBRL <- function(tickers = NULL,
   options(old_o)
 
   # TODO
-  # Implement success and failure messages
-  # Inform succesfull tickers and drop unsuccesfull
-  # cat("\nSuccesfull downloads:\n")
-  # print(names(allXBRLs[!is.na(allXBRLs)]))
-  #
-  # cat("\n\nUnsuccesfull downloads:\n")
-  # print(names(allXBRLs[is.na(allXBRLs)]))
+  # Implement detailed success and failure messages with reason why
 
   # Complete failures
   if (length(allXBRLs[is.na(allXBRLs)]) != 0) {

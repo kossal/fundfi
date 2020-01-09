@@ -111,7 +111,10 @@ getStatement <- function(xbrl.vars = NULL, statement = "balance_sheet", custom.d
   # Start building statement
   # Get elements from the role_id in calculations
   calc <- xbrl.vars$calculation[xbrl.vars$calculation$roleId == role_id,] %>%
-    mutate(order = as.numeric(order))
+    group_by(fromElementId) %>%
+    arrange(order, .by_group = TRUE) %>%
+    mutate(order = 1:n()) %>%
+    ungroup()
 
   if (nrow(calc) == 0 & !is.null(custom.description)) {
     stop(paste("No data was found using:", custom.description))
@@ -186,6 +189,7 @@ getStatement <- function(xbrl.vars = NULL, statement = "balance_sheet", custom.d
     mutate(concept = sprintf("%s%s", strrep(strrep("&nbsp;", 4), level - 1), labelString)) %>%
     select(id, level, parentId, elementId, balance, unitId, decimals, labelString, concept, fact, startDate, endDate)
 
+  # TODO implement all dates from income statement and cash flow
   # Income statements and cash flows have diferent start dates
   # for each endDate
   temp <- data.frame()

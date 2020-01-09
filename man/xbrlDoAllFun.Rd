@@ -4,8 +4,13 @@
 \alias{xbrlDoAllFun}
 \title{A mirror function of XBRL}
 \usage{
-xbrlDoAllFun(file.inst, cache.dir = "xbrl.Cache", prefix.out = NULL,
-  verbose = FALSE, delete.cached.inst = TRUE)
+xbrlDoAllFun(
+  file.inst,
+  cache.dir = "xbrl.Cache",
+  prefix.out = NULL,
+  verbose = FALSE,
+  delete.cached.inst = TRUE
+)
 }
 \value{
 A XBRL list of data.frames

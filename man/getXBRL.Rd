@@ -4,16 +4,28 @@
 \alias{getXBRL}
 \title{Fetch a list of XBRLs}
 \usage{
-getXBRL(tickers = NULL, type = "10-Q", count = 1, from = NULL,
-  to = NULL, force.new = FALSE, xbrl.cache = "xbrl.Cache",
-  xbrl.rds.cache = "xbrl.rds.Cache")
+getXBRL(
+  tickers = NULL,
+  type = "10-Q",
+  count = 1,
+  until = NULL,
+  force.new = FALSE,
+  xbrl.cache = "xbrl.Cache",
+  xbrl.rds.cache = "xbrl.rds.Cache"
+)
 }
 \arguments{
 \item{tickers}{A ticker character value or vector}
 
 \item{type}{Defaults to 10-Q. Type of filling like 10-Q or 10-K}
 
-\item{force.new}{Defaults to FALSE. If TRUE, ignores rds cache.}
+\item{count}{Number of maximum filings. If until parameter is set, the
+number of filings returned could be less.}
+
+\item{until}{yyyymmdd fillings are downloaded starting from the until
+parameter until the oldest, or until it reaches the count limit.}
+
+\item{force.new}{Defaults to FALSE. If TRUE.}
 
 \item{xbrl.cache}{Folder where XBRL taxonomies are saved.
 If null then it wont save cache.}
@@ -36,8 +48,8 @@ returned by the library XBRL. Each ticker XBRL from
 a data are cached as a .rds in the folder xbrl.rds.Cache.
 All XBRL taxonomies are cached in the folder xbrl.Cache.
 These behaviors can be modified using parameters.
-If any ticker do not exist, it will be dropped. It
-is reccomended to check if the length of the tickers
+If any ticker doesn´t exist, it will be dropped. It´s
+recomended to check if the length of the tickers
 is equal to the returned list.
 }
 \examples{
