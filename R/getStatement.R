@@ -18,8 +18,10 @@
 #' For this case, you can use the parameter custom.description
 #' to use your own description.
 #' @param xbrl.vars XBRL list of data.frames
-#' @param statement Type of statement. Can be balance_sheet, income_statement and cash_flow
-#' @param custom.description Character to fetch roleId using description from roles data.frame
+#' @param statement Type of statement. Can be balance_sheet, income_statement
+#' and cash_flow
+#' @param custom.description Character to fetch roleId using description from
+#' roles data.frame
 #' @return data.frame as a financial report
 #' @keywords Finantial Statement
 #' @export
@@ -68,9 +70,9 @@ getStatement <- function(xbrl.vars = NULL, statement = "balance_sheet", custom.d
 
   } else {
     # Use custom.description to get roleId
-    role_id <- xbrl.vars$role[xbrl.vars$role$description == custom.description, "roleId"]
+      role_id <- xbrl.vars$role[xbrl.vars$role$description == custom.description, "roleId"]
 
-    if (nchar(role_id) == 0) {
+    if (is.null(role_id)) {
       stop(paste("Role id names could not be found using custom.description", custom.description))
     }
   }
@@ -109,7 +111,10 @@ getStatement <- function(xbrl.vars = NULL, statement = "balance_sheet", custom.d
   # Start building statement
   # Get elements from the role_id in calculations
   calc <- xbrl.vars$calculation[xbrl.vars$calculation$roleId == role_id,] %>%
-    mutate(order = as.numeric(order))
+    group_by(fromElementId) %>%
+    arrange(order, .by_group = TRUE) %>%
+    mutate(order = 1:n()) %>%
+    ungroup()
 
   if (nrow(calc) == 0 & !is.null(custom.description)) {
     stop(paste("No data was found using:", custom.description))
@@ -184,6 +189,7 @@ getStatement <- function(xbrl.vars = NULL, statement = "balance_sheet", custom.d
     mutate(concept = sprintf("%s%s", strrep(strrep("&nbsp;", 4), level - 1), labelString)) %>%
     select(id, level, parentId, elementId, balance, unitId, decimals, labelString, concept, fact, startDate, endDate)
 
+  # TODO implement all dates from income statement and cash flow
   # Income statements and cash flows have diferent start dates
   # for each endDate
   temp <- data.frame()
